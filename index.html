@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Suivi Bancaire</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
@@ -16,6 +16,7 @@
             --red: #ef4444;
             --blue: #3b82f6;
             --accent: #6366f1;
+            --tab-height: 60px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,26 +26,163 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            padding: 1.5rem;
         }
 
-        h1 {
-            text-align: center;
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            color: var(--accent);
+        /* ===== DESKTOP LAYOUT (unchanged) ===== */
+        @media (min-width: 901px) {
+            body { padding: 1.5rem; }
+
+            .mobile-tabs { display: none !important; }
+
+            .tab-section { display: block !important; }
+
+            h1 {
+                text-align: center;
+                font-size: 1.8rem;
+                margin-bottom: 1.5rem;
+                color: var(--accent);
+            }
+
+            .dashboard {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+                max-width: 900px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .main-grid {
+                display: grid;
+                grid-template-columns: 350px 1fr;
+                gap: 1.5rem;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .charts-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            .chart-container { position: relative; height: 250px; }
+
+            .left-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+            .right-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+
+            .transaction-list { max-height: 300px; overflow-y: auto; }
+            .recurring-list { max-height: 200px; overflow-y: auto; }
         }
 
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
+        /* ===== MOBILE LAYOUT ===== */
+        @media (max-width: 900px) {
+            body {
+                padding: 0;
+                padding-bottom: calc(var(--tab-height) + 10px);
+            }
+
+            h1 {
+                text-align: center;
+                font-size: 1.4rem;
+                padding: 1rem 1rem 0.5rem;
+                color: var(--accent);
+            }
+
+            .dashboard {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 0.5rem;
+                padding: 0.5rem 0.8rem;
+            }
+
+            .stat-card { padding: 0.8rem 0.5rem; }
+            .stat-card .value { font-size: 1.1rem; }
+            .stat-card .label { font-size: 0.75rem; }
+
+            .main-grid {
+                display: block;
+                padding: 0 0.8rem;
+            }
+
+            .left-panel, .right-panel { display: contents; }
+
+            .charts-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .chart-container { position: relative; height: 220px; }
+
+            /* Hide sections by default on mobile */
+            .tab-section {
+                display: none;
+            }
+            .tab-section.active {
+                display: block;
+            }
+
+            /* Dashboard tab shows the stat cards */
+            #tab-dashboard.active ~ .main-grid { }
+
+            .transaction-list { max-height: none; overflow-y: auto; }
+            .recurring-list { max-height: none; overflow-y: auto; }
+
+            /* Mobile tabs bar */
+            .mobile-tabs {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: var(--tab-height);
+                background: var(--card);
+                border-top: 1px solid var(--border);
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                z-index: 1000;
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            .mobile-tabs button {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0.2rem;
+                background: none;
+                border: none;
+                color: var(--muted);
+                font-size: 0.65rem;
+                padding: 0.4rem 0;
+                cursor: pointer;
+                transition: color 0.2s;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .mobile-tabs button.active {
+                color: var(--accent);
+            }
+
+            .mobile-tabs button svg {
+                width: 22px;
+                height: 22px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 1.8;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .mobile-tabs button .tab-label {
+                font-weight: 500;
+            }
         }
 
+        /* ===== COMMON STYLES ===== */
         .stat-card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -59,19 +197,12 @@
         .stat-card .value.negative { color: var(--red); }
         .stat-card .value.neutral { color: var(--blue); }
 
-        .main-grid {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 1.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
         .card {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 1.2rem;
+            margin-bottom: 0.8rem;
         }
 
         .card h2 {
@@ -143,16 +274,6 @@
 
         .btn-add:hover { opacity: 0.85; }
 
-        .right-panel { display: flex; flex-direction: column; gap: 1.5rem; }
-
-        .charts-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .chart-container { position: relative; height: 250px; }
-
         .filter-bar {
             display: flex;
             gap: 0.5rem;
@@ -176,14 +297,13 @@
             color: white;
         }
 
-        .transaction-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
         .transaction-list::-webkit-scrollbar { width: 4px; }
         .transaction-list::-webkit-scrollbar-track { background: transparent; }
         .transaction-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .recurring-list::-webkit-scrollbar { width: 4px; }
+        .recurring-list::-webkit-scrollbar-track { background: transparent; }
+        .recurring-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
         .tx-item {
             display: flex;
@@ -222,13 +342,6 @@
             font-size: 0.9rem;
         }
 
-        .left-panel { display: flex; flex-direction: column; gap: 1.5rem; }
-
-        .recurring-list { max-height: 200px; overflow-y: auto; }
-        .recurring-list::-webkit-scrollbar { width: 4px; }
-        .recurring-list::-webkit-scrollbar-track { background: transparent; }
-        .recurring-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
         .rec-item {
             display: flex;
             align-items: center;
@@ -253,121 +366,173 @@
             vertical-align: middle;
         }
 
-        @media (max-width: 900px) {
-            .main-grid { grid-template-columns: 1fr; }
-            .dashboard { grid-template-columns: 1fr; }
-            .charts-grid { grid-template-columns: 1fr; }
+        /* Total recurring banner */
+        .rec-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
         }
+        .rec-total .rec-total-label { color: var(--muted); }
+        .rec-total .rec-total-value { color: var(--red); font-weight: 700; }
     </style>
 </head>
 <body>
     <h1>Suivi Bancaire</h1>
 
-    <div class="dashboard">
-        <div class="stat-card">
-            <div class="label">Solde</div>
-            <div class="value neutral" id="balance">0,00 &euro;</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Revenus</div>
-            <div class="value positive" id="totalIncome">0,00 &euro;</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">D&eacute;penses</div>
-            <div class="value negative" id="totalExpense">0,00 &euro;</div>
+    <!-- TAB: Dashboard (solde) - always visible -->
+    <div class="tab-section active" id="tab-dashboard">
+        <div class="dashboard">
+            <div class="stat-card">
+                <div class="label">Solde</div>
+                <div class="value neutral" id="balance">0,00 &euro;</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Revenus</div>
+                <div class="value positive" id="totalIncome">0,00 &euro;</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">D&eacute;penses</div>
+                <div class="value negative" id="totalExpense">0,00 &euro;</div>
+            </div>
         </div>
     </div>
 
     <div class="main-grid">
         <div class="left-panel">
-        <div class="card">
-            <h2>Nouvelle transaction</h2>
-            <div class="type-toggle">
-                <button id="btnIncome" class="active-income" onclick="setType('income')">Revenu</button>
-                <button id="btnExpense" onclick="setType('expense')">D&eacute;pense</button>
+            <!-- TAB: Ajouter -->
+            <div class="tab-section" id="tab-add">
+                <div class="card">
+                    <h2>Nouvelle transaction</h2>
+                    <div class="type-toggle">
+                        <button id="btnIncome" class="active-income" onclick="setType('income')">Revenu</button>
+                        <button id="btnExpense" onclick="setType('expense')">D&eacute;pense</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="desc" placeholder="Ex: Courses Carrefour">
+                    </div>
+                    <div class="form-group">
+                        <label>Montant (&euro;)</label>
+                        <input type="number" id="amount" placeholder="0.00" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Cat&eacute;gorie</label>
+                        <select id="category"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="date">
+                    </div>
+                    <button class="btn-add" onclick="addTransaction()">Ajouter</button>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Description</label>
-                <input type="text" id="desc" placeholder="Ex: Courses Carrefour">
-            </div>
-            <div class="form-group">
-                <label>Montant (&euro;)</label>
-                <input type="number" id="amount" placeholder="0.00" min="0" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Cat&eacute;gorie</label>
-                <select id="category"></select>
-            </div>
-            <div class="form-group">
-                <label>Date</label>
-                <input type="date" id="date">
-            </div>
-            <button class="btn-add" onclick="addTransaction()">Ajouter</button>
-        </div>
 
-        <div class="card">
-            <h2>Pr&eacute;l&egrave;vements fixes <span class="badge" id="recCount">0</span></h2>
-            <div class="form-group">
-                <label>Description</label>
-                <input type="text" id="recDesc" placeholder="Ex: Loyer, Netflix...">
+            <!-- TAB: Prélèvements -->
+            <div class="tab-section" id="tab-recurring">
+                <div class="card">
+                    <h2>Pr&eacute;l&egrave;vements fixes <span class="badge" id="recCount">0</span></h2>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="recDesc" placeholder="Ex: Loyer, Netflix...">
+                    </div>
+                    <div class="form-group">
+                        <label>Montant (&euro;)</label>
+                        <input type="number" id="recAmount" placeholder="0.00" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Cat&eacute;gorie</label>
+                        <select id="recCategory">
+                            <option>Logement</option>
+                            <option>Factures</option>
+                            <option>Transport</option>
+                            <option>Loisirs</option>
+                            <option>Sant&eacute;</option>
+                            <option>Shopping</option>
+                            <option>Alimentation</option>
+                            <option>Autres</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jour du mois (1-28)</label>
+                        <input type="number" id="recDay" min="1" max="28" value="1">
+                    </div>
+                    <button class="btn-add" onclick="addRecurring()">Ajouter le pr&eacute;l&egrave;vement</button>
+                    <div class="recurring-list" id="recList" style="margin-top: 0.8rem;">
+                        <div class="empty-state" style="padding: 1rem;">Aucun pr&eacute;l&egrave;vement</div>
+                    </div>
+                    <div class="rec-total" id="recTotal" style="display:none;">
+                        <span class="rec-total-label">Total mensuel</span>
+                        <span class="rec-total-value" id="recTotalValue">0,00 &euro;</span>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Montant (&euro;)</label>
-                <input type="number" id="recAmount" placeholder="0.00" min="0" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Cat&eacute;gorie</label>
-                <select id="recCategory">
-                    <option>Logement</option>
-                    <option>Factures</option>
-                    <option>Transport</option>
-                    <option>Loisirs</option>
-                    <option>Sant&eacute;</option>
-                    <option>Shopping</option>
-                    <option>Alimentation</option>
-                    <option>Autres</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Jour du mois (1-28)</label>
-                <input type="number" id="recDay" min="1" max="28" value="1">
-            </div>
-            <button class="btn-add" onclick="addRecurring()">Ajouter le pr&eacute;l&egrave;vement</button>
-            <div class="recurring-list" id="recList" style="margin-top: 0.8rem;">
-                <div class="empty-state" style="padding: 1rem;">Aucun pr&eacute;l&egrave;vement</div>
-            </div>
-        </div>
         </div>
 
         <div class="right-panel">
-            <div class="charts-grid">
-                <div class="card">
-                    <h2>D&eacute;penses par cat&eacute;gorie</h2>
-                    <div class="chart-container">
-                        <canvas id="pieChart"></canvas>
+            <!-- TAB: Graphiques -->
+            <div class="tab-section" id="tab-charts">
+                <div class="charts-grid">
+                    <div class="card">
+                        <h2>D&eacute;penses par cat&eacute;gorie</h2>
+                        <div class="chart-container">
+                            <canvas id="pieChart"></canvas>
+                        </div>
                     </div>
-                </div>
-                <div class="card">
-                    <h2>&Eacute;volution mensuelle</h2>
-                    <div class="chart-container">
-                        <canvas id="barChart"></canvas>
+                    <div class="card">
+                        <h2>&Eacute;volution mensuelle</h2>
+                        <div class="chart-container">
+                            <canvas id="barChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
-                <h2>Transactions</h2>
-                <div class="filter-bar">
-                    <button class="active" onclick="setFilter('all', this)">Tout</button>
-                    <button onclick="setFilter('income', this)">Revenus</button>
-                    <button onclick="setFilter('expense', this)">D&eacute;penses</button>
-                </div>
-                <div class="transaction-list" id="txList">
-                    <div class="empty-state">Aucune transaction</div>
+            <!-- TAB: Historique -->
+            <div class="tab-section" id="tab-history">
+                <div class="card">
+                    <h2>Transactions</h2>
+                    <div class="filter-bar">
+                        <button class="active" onclick="setFilter('all', this)">Tout</button>
+                        <button onclick="setFilter('income', this)">Revenus</button>
+                        <button onclick="setFilter('expense', this)">D&eacute;penses</button>
+                    </div>
+                    <div class="transaction-list" id="txList">
+                        <div class="empty-state">Aucune transaction</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Mobile tab bar -->
+    <nav class="mobile-tabs" id="mobileTabBar">
+        <button class="active" onclick="switchTab('dashboard', this)" data-tab="dashboard">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="tab-label">Solde</span>
+        </button>
+        <button onclick="switchTab('add', this)" data-tab="add">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span class="tab-label">Ajouter</span>
+        </button>
+        <button onclick="switchTab('recurring', this)" data-tab="recurring">
+            <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><polyline points="21 3 21 9 15 9"/></svg>
+            <span class="tab-label">Pr&eacute;l&egrave;v.</span>
+        </button>
+        <button onclick="switchTab('charts', this)" data-tab="charts">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span class="tab-label">Stats</span>
+        </button>
+        <button onclick="switchTab('history', this)" data-tab="history">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span class="tab-label">Historique</span>
+        </button>
+    </nav>
 
     <script>
         const CATEGORIES = {
@@ -395,6 +560,43 @@
         let currentFilter = 'all';
         let pieChart, barChart;
 
+        // ===== MOBILE TAB NAVIGATION =====
+        function isMobile() {
+            return window.innerWidth <= 900;
+        }
+
+        function switchTab(tabName, btn) {
+            if (!isMobile()) return;
+
+            // Hide all tab sections
+            document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+
+            // Show selected tab
+            const target = document.getElementById('tab-' + tabName);
+            if (target) target.classList.add('active');
+
+            // Always show dashboard on all tabs
+            if (tabName !== 'dashboard') {
+                document.getElementById('tab-dashboard').classList.add('active');
+            }
+
+            // Update active button
+            document.querySelectorAll('.mobile-tabs button').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+
+            // Re-render charts if charts tab is shown (needed for proper sizing)
+            if (tabName === 'charts') {
+                setTimeout(() => {
+                    renderPieChart();
+                    renderBarChart();
+                }, 50);
+            }
+        }
+
+        // ===== FORM FUNCTIONS =====
         function setType(type) {
             currentType = type;
             document.getElementById('btnIncome').className = type === 'income' ? 'active-income' : '';
@@ -452,6 +654,7 @@
 
             if (recurring.length === 0) {
                 list.innerHTML = '<div class="empty-state" style="padding: 1rem;">Aucun pr\u00e9l\u00e8vement</div>';
+                document.getElementById('recTotal').style.display = 'none';
                 return;
             }
 
@@ -465,6 +668,11 @@
                     <button class="btn-delete" onclick="deleteRecurring(${r.id})" title="Supprimer">&times;</button>
                 </div>
             `).join('');
+
+            // Show total
+            const total = recurring.reduce((s, r) => s + r.amount, 0);
+            document.getElementById('recTotal').style.display = 'flex';
+            document.getElementById('recTotalValue').textContent = '-' + formatMoney(total);
         }
 
         function applyRecurring() {
