@@ -222,6 +222,37 @@
             font-size: 0.9rem;
         }
 
+        .left-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        .recurring-list { max-height: 200px; overflow-y: auto; }
+        .recurring-list::-webkit-scrollbar { width: 4px; }
+        .recurring-list::-webkit-scrollbar-track { background: transparent; }
+        .recurring-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .rec-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .rec-item:last-child { border-bottom: none; }
+        .rec-info { flex: 1; }
+        .rec-info .rec-desc { font-size: 0.85rem; font-weight: 500; }
+        .rec-info .rec-meta { font-size: 0.7rem; color: var(--muted); margin-top: 0.1rem; }
+        .rec-amount { font-weight: 700; font-size: 0.85rem; color: var(--red); margin-right: 0.6rem; }
+
+        .badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 10px;
+            margin-left: 0.4rem;
+            vertical-align: middle;
+        }
+
         @media (max-width: 900px) {
             .main-grid { grid-template-columns: 1fr; }
             .dashboard { grid-template-columns: 1fr; }
@@ -248,6 +279,7 @@
     </div>
 
     <div class="main-grid">
+        <div class="left-panel">
         <div class="card">
             <h2>Nouvelle transaction</h2>
             <div class="type-toggle">
@@ -271,6 +303,40 @@
                 <input type="date" id="date">
             </div>
             <button class="btn-add" onclick="addTransaction()">Ajouter</button>
+        </div>
+
+        <div class="card">
+            <h2>Pr&eacute;l&egrave;vements fixes <span class="badge" id="recCount">0</span></h2>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="recDesc" placeholder="Ex: Loyer, Netflix...">
+            </div>
+            <div class="form-group">
+                <label>Montant (&euro;)</label>
+                <input type="number" id="recAmount" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Cat&eacute;gorie</label>
+                <select id="recCategory">
+                    <option>Logement</option>
+                    <option>Factures</option>
+                    <option>Transport</option>
+                    <option>Loisirs</option>
+                    <option>Sant&eacute;</option>
+                    <option>Shopping</option>
+                    <option>Alimentation</option>
+                    <option>Autres</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Jour du mois (1-28)</label>
+                <input type="number" id="recDay" min="1" max="28" value="1">
+            </div>
+            <button class="btn-add" onclick="addRecurring()">Ajouter le pr&eacute;l&egrave;vement</button>
+            <div class="recurring-list" id="recList" style="margin-top: 0.8rem;">
+                <div class="empty-state" style="padding: 1rem;">Aucun pr&eacute;l&egrave;vement</div>
+            </div>
+        </div>
         </div>
 
         <div class="right-panel">
@@ -324,6 +390,7 @@
         };
 
         let transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+        let recurring = JSON.parse(localStorage.getItem('recurring') || '[]');
         let currentType = 'income';
         let currentFilter = 'all';
         let pieChart, barChart;
@@ -349,6 +416,86 @@
 
         function save() {
             localStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        function saveRecurring() {
+            localStorage.setItem('recurring', JSON.stringify(recurring));
+        }
+
+        function addRecurring() {
+            const desc = document.getElementById('recDesc').value.trim();
+            const amount = parseFloat(document.getElementById('recAmount').value);
+            const category = document.getElementById('recCategory').value;
+            const day = parseInt(document.getElementById('recDay').value);
+
+            if (!desc || isNaN(amount) || amount <= 0 || isNaN(day) || day < 1 || day > 28) return;
+
+            recurring.push({ id: Date.now(), desc, amount, category, day });
+            saveRecurring();
+            renderRecurring();
+            applyRecurring();
+
+            document.getElementById('recDesc').value = '';
+            document.getElementById('recAmount').value = '';
+            document.getElementById('recDay').value = '1';
+        }
+
+        function deleteRecurring(id) {
+            recurring = recurring.filter(r => r.id !== id);
+            saveRecurring();
+            renderRecurring();
+        }
+
+        function renderRecurring() {
+            const list = document.getElementById('recList');
+            document.getElementById('recCount').textContent = recurring.length;
+
+            if (recurring.length === 0) {
+                list.innerHTML = '<div class="empty-state" style="padding: 1rem;">Aucun pr\u00e9l\u00e8vement</div>';
+                return;
+            }
+
+            list.innerHTML = recurring.map(r => `
+                <div class="rec-item">
+                    <div class="rec-info">
+                        <div class="rec-desc">${escapeHtml(r.desc)}</div>
+                        <div class="rec-meta">${r.category} &bull; le ${r.day} de chaque mois</div>
+                    </div>
+                    <div class="rec-amount">-${formatMoney(r.amount)}</div>
+                    <button class="btn-delete" onclick="deleteRecurring(${r.id})" title="Supprimer">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        function applyRecurring() {
+            const now = new Date();
+            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            let applied = JSON.parse(localStorage.getItem('recurringApplied') || '{}');
+            let changed = false;
+
+            recurring.forEach(r => {
+                const key = r.id + '_' + currentMonth;
+                if (!applied[key]) {
+                    const day = String(Math.min(r.day, 28)).padStart(2, '0');
+                    transactions.push({
+                        id: Date.now() + Math.random(),
+                        type: 'expense',
+                        desc: r.desc + ' (auto)',
+                        amount: r.amount,
+                        category: r.category,
+                        date: currentMonth + '-' + day,
+                        recurring: true
+                    });
+                    applied[key] = true;
+                    changed = true;
+                }
+            });
+
+            if (changed) {
+                save();
+                localStorage.setItem('recurringApplied', JSON.stringify(applied));
+                render();
+            }
         }
 
         function formatMoney(n) {
@@ -526,6 +673,8 @@
         // Init
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
         updateCategorySelect();
+        renderRecurring();
+        applyRecurring();
         render();
     </script>
 </body>
